@@ -78,7 +78,7 @@ function bueditor_plus_form_field_ui_field_edit_form_alter(&$form, &$form_state)
   if (in_array($form['#instance']['widget']['type'], $allowed_fields)) {
     // We want the BUEditor options to appear right after the text_processing radios
     $pr = bueditor_plus_profiles();
-    $profiles = array(0 => 'None');
+    $profiles = array(0 => 'None', '-1' => 'Global Profile');
     foreach ($pr as $profile) {
       $profiles[$profile->pid] = $profile->name;
     }
@@ -136,11 +136,19 @@ function bueditor_plus_preprocess_text_format_wrapper($variables) {
     $instance = $instances[$variables['element']['#field_name']];
     $allowed_fields = bueditor_allowed_fields();
 
-    if (isset($instance['widget']['type']) && in_array($instance['widget']['type'], $allowed_fields) && isset($instance['bueditor_profile']) && $instance['bueditor_profile']) {
-      $variables['#attributes']['element']['class'][] = 'bueditor-plus';
+    if (isset($instance['widget']['type']) && in_array($instance['widget']['type'], $allowed_fields)) {
+    
+      if (isset($instance['bueditor_profile']) && $instance['bueditor_profile'] > 0) {
+        $variables['#attributes']['element']['class'][] = 'bueditor-plus';
 
-      $profile = bueditor_plus_profiles($instance['bueditor_profile']);
-      if (!$profile){
+        $profile = bueditor_plus_profiles($instance['bueditor_profile']);
+      } else {
+          
+        if (!isset($instance['bueditor_profile']) || $instance['bueditor_profile'] == -1) {
+          $profile = bueditor_plus_profiles('global');
+        }
+      }
+      if (!$profile) {
         return;
       }
       $formats = $variables['element']['format']['format']['#options'];
@@ -190,7 +198,8 @@ function bueditor_profile_load($pid) {
 /**
  * Loads the editor profiles.
  * @param $pid
- *   The profile ID of the profile to load. Null will return all profiles.
+ *   The profile ID of the profile to load. Null will return all profiles. global
+ *   will return the global profile if set.
  * 
  * @return 
  *   Either a keyed array of all profiles or a single profile.
@@ -208,7 +217,13 @@ function bueditor_plus_profiles($pid = NULL) {
       $cache[$result->pid] = $result;
     }
   }
-
+  if ($pid=='global'){
+    foreach ($cache as $profile){
+      if ($profile->global){
+        return $profile;
+      }
+    }
+  }
   if ($pid) {
     return isset($cache[$pid]) ? $cache[$pid] : NULL;
   }

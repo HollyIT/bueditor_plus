@@ -21,8 +21,9 @@ function bueditor_plus_admin() {
   $header = array(t('Profile name'), array('data' => t('Operations'), 'colspan' => 2));
   $rows = array();
   foreach ($profiles as $pid => $profile) {
+    $name = $profile->global ? $profile->name . ' <em>(' . t('Global') . ')</em>' : $profile->name;
     $rows[] = array(
-      $profile->name,
+      $name,
       l(t('Edit'), $path . '/edit/' . $pid) . ' | ' .
       l(t('Delete'), $path . '/delete/' . $pid)
     );
@@ -117,7 +118,14 @@ function bueditor_plus_profile_form($form, &$form_state, $profile = NULL) {
       '#default_value' => ($profile && isset($profile->data[$format->format]['alternative'])) ? $profile->data[$format->format]['alternative'] : 0
     );
   }
-
+  
+  $form['global'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Global profile',
+    '#description' => t('A global profile will be used on fields that don\'t have a specific profile assigned. Only one global profile can exist per installation'),
+    '#default_value' => $profile ? $profile->global : 0
+  );
+  
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => $profile ? t('Create Profile') : t('Save Profile')
@@ -133,8 +141,14 @@ function bueditor_plus_profile_form($form, &$form_state, $profile = NULL) {
 function bueditor_plus_profile_form_submit(&$form, &$form_state) {
   $fields = array(
     'name' => $form_state['values']['name'],
-    'data' => serialize($form_state['values']['formats'])
+    'data' => serialize($form_state['values']['formats']),
+    'global' => $form_state['values']['global']
   );
+  
+  if ($form_state['values']['global']){
+    // unset all globals
+    db_query("UPDATE {bueditor_plus_profiles} SET global=0");
+  }
   if (isset($form['#profile'])) {
     db_update('bueditor_plus_profiles')
       ->fields($fields)

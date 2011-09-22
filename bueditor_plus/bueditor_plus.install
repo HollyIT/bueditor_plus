@@ -18,7 +18,7 @@ function bueditor_plus_install() {
  */
 function bueditor_plus_schema() {
   $schema['bueditor_plus_profiles'] = array(
-    'description' => 'Stores the BUEditor Plus profiles',
+    'description' => 'TODO: please describe this table!',
     'fields' => array(
       'pid' => array(
         'description' => 'Profile ID',
@@ -37,9 +37,16 @@ function bueditor_plus_schema() {
         'size' => 'big',
         'not null' => TRUE,
       ),
+      'global' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
     ),
     'primary key' => array('pid'),
   );
+
 
   return $schema;
 }
@@ -48,5 +55,14 @@ function bueditor_plus_schema() {
  * Implements of hook_uninstall()
  */
 function bueditor_plus_uninstall() {
+  
+}
 
+/**
+ * Create the global field
+ */
+function bueditor_plus_update_7001() {
+  if (!db_field_exists('bueditor_plus_profiles', 'global')) {
+    db_add_field('bueditor_plus_profiles', 'global', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0));
+  }
 }
