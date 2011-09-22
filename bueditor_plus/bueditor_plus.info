@@ -1,0 +1,9 @@
+; $Id$ 
+name = "BUEditor Plus"
+description = "Provides better control of where BUEditor appears and allows editor assignment based upon input format"
+core = "7.x"
+package = "Content authoring"
+version = 7.x-1.0-beta
+php = 5.2.x
+dependencies[] = bueditor
+files[] = bueditor_plus.admin.inc

@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Implements of hook_install()
+ */
+function bueditor_plus_install() {
+  //We need to set the weight of this higher than that of BUEditor so that we can override the changes made
+  $weight = db_query("SELECT weight FROM {system} WHERE name='bueditor'")->fetchField();
+  db_query("UPDATE {system} SET weight=:weight WHERE name='bueditor_plus'", array(':weight' => $weight + 100));
+}
+
+/**
+ * Implements of hook_schema()
+ */
+function bueditor_plus_schema() {
+  $schema['bueditor_plus_profiles'] = array(
+    'description' => 'Stores the BUEditor Plus profiles',
+    'fields' => array(
+      'pid' => array(
+        'description' => 'Profile ID',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Profile Name',
+        'type' => 'varchar',
+        'length' => '64',
+        'not null' => TRUE,
+      ),
+      'data' => array(
+        'description' => 'Profile Data',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('pid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements of hook_uninstall()
+ */
+function bueditor_plus_uninstall() {
+
+}

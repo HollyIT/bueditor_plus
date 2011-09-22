@@ -1,0 +1,216 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Implements of hook_theme()
+ */
+function bueditor_plus_theme() {
+  $theme['bueditor_plus_profile_table'] = array(
+    'file' => 'bueditor_plus.admin.inc',
+    'render element' => 'form',
+  );
+
+  return $theme;
+}
+
+/**
+ * Implements of hook_element_info_alter()
+ */
+function bueditor_plus_element_info_alter(&$elements) {
+  // We are going to drop bueditor's processing of textareas since that will now occur on a field basis.
+  foreach ($elements['textarea']['#process'] as $key => $callback) {
+    if ($callback == 'bueditor_textarea') {
+      unset($elements['textarea']['#process'][$key]);
+    }
+  }
+}
+
+/**
+ * Implements of hook_menu()
+ */
+function bueditor_plus_menu() {
+  // We are going to override the original BUEditor overview form
+  $items = array();
+  $path = 'admin/config/content/bueditor';
+  $common = array(
+    'access arguments' => array('administer bueditor'),
+    'file' => 'bueditor_plus.admin.inc',
+  );
+
+  $items[$path] = $common + array(
+    'title' => 'BUEditor',
+    'description' => 'Customize your text editor.',
+    'page callback' => 'bueditor_plus_admin',
+  );
+
+  $items[$path . '/profile/new'] = $common + array(
+    'title' => 'Add New BUEditor Profile',
+    'description' => 'Create a profile to assign to field instances.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bueditor_plus_profile_form')
+  );
+
+  $items[$path . '/profile/edit/%bueditor_profile'] = $common + array(
+    'title' => 'Edit BUEditor Profile',
+    'description' => 'Create a profile to assign to field instances.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bueditor_plus_profile_form', 6)
+  );
+
+  $items[$path . '/profile/delete/%bueditor_profile'] = $common + array(
+    'title' => 'Delete BUEditor Profile',
+    'description' => 'Delete a BUEditor profile.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bueditor_plus_profile_delete_form', 6)
+  );
+  return $items;
+}
+
+/**
+ * Implements of form_field_ui_field_edit_form_alter()
+ */
+function bueditor_plus_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
+
+  $allowed_fields = bueditor_allowed_fields();
+  if (in_array($form['#instance']['widget']['type'], $allowed_fields)) {
+    // We want the BUEditor options to appear right after the text_processing radios
+    $pr = bueditor_plus_profiles();
+    $profiles = array(0 => 'None');
+    foreach ($pr as $profile) {
+      $profiles[$profile->pid] = $profile->name;
+    }
+
+    $form['instance']['bueditor_profile'] = array(
+      '#type' => 'select',
+      '#title' => t('BUEditor Profile'),
+      '#description' => t('Select the BUEditor profile to enable on this field'),
+      '#options' => $profiles,
+      '#default_value' => isset($form['#instance']['bueditor_profile']) ? $form['#instance']['bueditor_profile'] : 0
+    );
+  }
+}
+
+/**
+ * The field types that can have profiles attached
+ * @return array
+ */
+function bueditor_allowed_fields() {
+  $cache = &drupal_static(__FUNCTION__, NULL);
+  if (!$cache) {
+    $cache = array('text_textarea_with_summary', 'text_textarea');
+    //Allow other modules to add in allowed fields to enable bueditor on
+    drupal_alter('bueditor_plus_allowed_fields', $cache);
+  }
+  return $cache;
+}
+
+/**
+ * Helper function to retrieve the assigne BUEditor for the profile
+ * @staticvar array $editors
+ * @param type $eids An array containing the editors to loop through.
+ * @param type $tid The ID of the element the editor is to be attached to.
+ * @return type Either the editor ID or FALSE if no editors are found.
+ */
+function _bueditor_plus_get_editor($eids, $tid) {
+  bueditor_inc();
+  foreach ($eids as $eid) {
+    $editors[$eid] = bueditor_editors($eid);
+    if ($editors[$eid] && $editors[$eid]->pages && drupal_match_path($_GET['q'], $editors[$eid]->pages)) {
+      if ($editors[$eid] && !bueditor_check_match($editors[$eid]->excludes, $tid)) {
+        return $editors[$eid];
+      }
+    }
+  }
+}
+
+/**
+ * Implements of hook_preprocess_text_format_wrapper()
+ */
+function bueditor_plus_preprocess_text_format_wrapper($variables) {
+
+  $instances = field_info_instances($variables['element']['#entity_type'], $variables['element']['#bundle']);
+  if (isset($instances[$variables['element']['#field_name']])) {
+    $instance = $instances[$variables['element']['#field_name']];
+    $allowed_fields = bueditor_allowed_fields();
+
+    if (isset($instance['widget']['type']) && in_array($instance['widget']['type'], $allowed_fields) && isset($instance['bueditor_profile']) && $instance['bueditor_profile']) {
+      $variables['#attributes']['element']['class'][] = 'bueditor-plus';
+
+      $profile = bueditor_plus_profiles($instance['bueditor_profile']);
+      if (!$profile){
+        return;
+      }
+      $formats = $variables['element']['format']['format']['#options'];
+      $settings = array();
+      $tid = $variables['element']['#id'];
+      $settings = array();
+
+      foreach ($profile->data as $format => $editors) {
+        $editor[$format] = _bueditor_plus_get_editor($editors, $tid);
+        if ($editor[$format]) {
+          _bueditor_settle($editor[$format]);
+          $settings['BUEPlus']['preset'][$tid][$format] = 'e' . $editor[$format]->eid;
+        }
+      }
+      if (isset($settings['BUEPlus'])) {
+        drupal_add_js($settings, 'setting');
+        _bueditor_plus_add_js();
+      }
+    }
+  }
+}
+
+/**
+ * Adds our javascript file. We only want this once, so do it in a custom function
+ * @staticvar boolean $done
+ */
+function _bueditor_plus_add_js() {
+  static $done = FALSE;
+  if (!$done) {
+    $done = TRUE;
+    drupal_add_js(drupal_get_path('module', 'bueditor_plus') . '/js/bueditor-plus.js');
+  }
+}
+
+/**
+ * Loads a specific profile. Used in menu %bueditor_profile
+ * @param $pid
+ *   The profile id to load
+ * 
+ * @return
+ *   The profile object
+ */
+function bueditor_profile_load($pid) {
+  return bueditor_plus_profiles($pid);
+}
+
+/**
+ * Loads the editor profiles.
+ * @param $pid
+ *   The profile ID of the profile to load. Null will return all profiles.
+ * 
+ * @return 
+ *   Either a keyed array of all profiles or a single profile.
+ */
+function bueditor_plus_profiles($pid = NULL) {
+  $cache = &drupal_static(__FUNCTION__, NULL);
+  if (!$cache) {
+    $cache = array();
+    $results = db_select('bueditor_plus_profiles')
+      ->fields('bueditor_plus_profiles')
+      ->execute();
+
+    foreach ($results as $result) {
+      $result->data = unserialize($result->data);
+      $cache[$result->pid] = $result;
+    }
+  }
+
+  if ($pid) {
+    return isset($cache[$pid]) ? $cache[$pid] : NULL;
+  }
+  return $cache;
+}
