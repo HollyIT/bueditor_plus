@@ -1,0 +1,20 @@
+BUEditor Plus for Drupal 7
+
+This module provides expanded control over the popular BUEditor module for Drupal (http://drupal.org/project/bueditor).
+
+By default BUEditor displays on most textareas. You can control which editor appears via roles, paths and
+element IDs. BUEditor Plus overrides that default behavior and gives you better control over which textareas
+the editor appears on. Now you create profiles and assign those profiles to text fields in Drupal's field system.
+Not only that, but BUEditor Plus allows you to assign different editors based upon text format. You can create
+a "Full HTML" editor and a "Filtered HTML" editor in BUEditor. Then in your profile assign those editors to their
+associated input format. Now when you change input formats for a textarea the editor will automatically change to
+the proper one for that format. You can even set a format to "none" to not have an editor appear with that input
+format.
+
+BUEditor Plus removes the roles checking used by the actual BUEditor module. Instead editors are chosen based upon
+input formats, which already have role control. The default path and element ID visibility settings in BUEditor are
+still enforced in BUEditor Plus, making it possible to assign alternative editors to each input format.
+
+For usage instructions please see the included README.txt file in the module folder.
+
+This project was developed for Crooks and Liars (http://crooksandliars.com) by HollyIT (http://www.hollyit.net)
