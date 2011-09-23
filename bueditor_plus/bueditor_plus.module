@@ -132,6 +132,7 @@ function _bueditor_plus_get_editor($eids, $tid) {
 function bueditor_plus_preprocess_text_format_wrapper($variables) {
 
   $instances = field_info_instances($variables['element']['#entity_type'], $variables['element']['#bundle']);
+  $profile = NULL;
   if (isset($instances[$variables['element']['#field_name']])) {
     $instance = $instances[$variables['element']['#field_name']];
     $allowed_fields = bueditor_allowed_fields();
