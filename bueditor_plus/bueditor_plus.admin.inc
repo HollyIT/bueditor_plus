@@ -128,7 +128,7 @@ function bueditor_plus_profile_form($form, &$form_state, $profile = NULL) {
   
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => $profile ? t('Create Profile') : t('Save Profile')
+    '#value' => $profile ? t('Save Profile') : t('Create Profile')
   );
   return $form;
 }

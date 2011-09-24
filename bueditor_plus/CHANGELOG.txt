@@ -5,3 +5,4 @@ BUEditor 7.x-1.0-beta
 Initial commit
 #1 (09/22/2011) - Created a global profile option.
 #2 (09/22/2011) - Declared $profile in  bueditor_plus_preprocess_text_format_wrapper() as NULL to prevent notices
+#4 (09/23/2011) - Fixed profile form submit values being reversed.
