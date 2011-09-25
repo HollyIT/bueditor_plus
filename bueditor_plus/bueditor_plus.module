@@ -131,6 +131,10 @@ function _bueditor_plus_get_editor($eids, $tid) {
  */
 function bueditor_plus_preprocess_text_format_wrapper($variables) {
 
+  // BUEditor Plus only works on entities
+  if (!isset($element['#entity_type'])){
+    return;
+  }  
   $instances = field_info_instances($variables['element']['#entity_type'], $variables['element']['#bundle']);
   $profile = NULL;
   if (isset($instances[$variables['element']['#field_name']])) {
@@ -138,13 +142,10 @@ function bueditor_plus_preprocess_text_format_wrapper($variables) {
     $allowed_fields = bueditor_allowed_fields();
 
     if (isset($instance['widget']['type']) && in_array($instance['widget']['type'], $allowed_fields)) {
-    
+      // We check to see if this instance has a profile. If not then we go for a global one.
       if (isset($instance['bueditor_profile']) && $instance['bueditor_profile'] > 0) {
-        $variables['#attributes']['element']['class'][] = 'bueditor-plus';
-
         $profile = bueditor_plus_profiles($instance['bueditor_profile']);
       } else {
-          
         if (!isset($instance['bueditor_profile']) || $instance['bueditor_profile'] == -1) {
           $profile = bueditor_plus_profiles('global');
         }
@@ -152,6 +153,7 @@ function bueditor_plus_preprocess_text_format_wrapper($variables) {
       if (!$profile) {
         return;
       }
+      $variables['#attributes']['element']['class'][] = 'bueditor-plus';
       $formats = $variables['element']['format']['format']['#options'];
       $settings = array();
       $tid = $variables['element']['#id'];
@@ -164,6 +166,7 @@ function bueditor_plus_preprocess_text_format_wrapper($variables) {
           $settings['BUEPlus']['preset'][$tid][$format] = 'e' . $editor[$format]->eid;
         }
       }
+
       if (isset($settings['BUEPlus'])) {
         drupal_add_js($settings, 'setting');
         _bueditor_plus_add_js();
@@ -218,9 +221,9 @@ function bueditor_plus_profiles($pid = NULL) {
       $cache[$result->pid] = $result;
     }
   }
-  if ($pid=='global'){
-    foreach ($cache as $profile){
-      if ($profile->global){
+  if ($pid == 'global') {
+    foreach ($cache as $profile) {
+      if ($profile->global) {
         return $profile;
       }
     }
