@@ -132,7 +132,7 @@ function _bueditor_plus_get_editor($eids, $tid) {
 function bueditor_plus_preprocess_text_format_wrapper($variables) {
 
   // BUEditor Plus only works on entities
-  if (!isset($element['#entity_type'])){
+  if (!isset($variables['element']['#entity_type'])){
     return;
   }  
   $instances = field_info_instances($variables['element']['#entity_type'], $variables['element']['#bundle']);
